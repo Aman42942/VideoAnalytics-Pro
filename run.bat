@@ -10,6 +10,7 @@ echo.
 
 set PYTHON="C:\Users\amanh\AppData\Local\Programs\Python\Python311\python.exe"
 set PYTHONIOENCODING=utf-8
+set PORT=5000
 
 echo [1/2] Launching AI & Computer Vision engines...
 echo [2/2] Opening browser at: http://127.0.0.1:5000

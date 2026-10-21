@@ -1,3 +1,13 @@
+---
+title: VideoAnalytics Pro
+emoji: 🎥
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🎥 VideoAnalytics Pro
 
 An end-to-end multi-task Video Analytics platform powered by Computer Vision and Deep Learning. Features real-time **Object Detection**, **Facial Emotion Recognition**, **Optical Character Recognition (OCR)**, and an intelligent **Security Surveillance System** in a single web dashboard.

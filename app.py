@@ -557,6 +557,123 @@ def system_status():
         'mode': current_mode
     })
 
+# ─── Browser WebRTC / Client-side Frame Endpoint (For Cloud & Remote) ────────
+@app.route('/process_webcam_frame', methods=['POST'])
+def process_webcam_frame():
+    """Receives a frame from browser webcam (base64) and runs current analytics mode."""
+    data = request.get_json() or {}
+    img_b64 = data.get('image', '')
+    mode = data.get('mode', current_mode)
+
+    if not img_b64:
+        return jsonify({'error': 'No image data'}), 400
+
+    try:
+        if ',' in img_b64:
+            img_b64 = img_b64.split(',', 1)[1]
+        img_bytes = base64.b64decode(img_b64)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        if frame is None:
+            return jsonify({'error': 'Failed to decode frame'}), 400
+
+        h, w = frame.shape[:2]
+        res_data = {}
+
+        # 1. Object Detection
+        if mode == 'object_detection':
+            objs = []
+            if YOLO_READY and yolo_model:
+                r = yolo_model(frame, conf=0.35, verbose=False)[0]
+                for box in r.boxes:
+                    cls = int(box.cls[0])
+                    conf = float(box.conf[0])
+                    label = yolo_model.names[cls]
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 100), 2)
+                    draw_tag(frame, f"{label} {int(conf*100)}%", (x1, y1), (0, 220, 100))
+                    objs.append({'label': label, 'confidence': round(conf, 2)})
+            render_hud_overlay(frame, "Object Detection (YOLOv8)", f"Objects: {len(objs)}", (0, 220, 100))
+            res_data = {'objects': objs, 'count': len(objs)}
+
+        # 2. Emotion Recognition
+        elif mode == 'emotion':
+            faces = []
+            if MTCNN_READY and mtcnn_detector:
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                boxes, _ = mtcnn_detector.detect(Image.fromarray(rgb))
+                if boxes is not None:
+                    for box in boxes:
+                        x1, y1, x2, y2 = [int(v) for v in box]
+                        x1, y1 = max(0, x1), max(0, y1)
+                        x2, y2 = min(w, x2), min(h, y2)
+                        crop = frame[y1:y2, x1:x2]
+                        if crop.shape[0] > 15 and crop.shape[1] > 15:
+                            dom = 'neutral'
+                            scores = {}
+                            if DEEPFACE_READY:
+                                try:
+                                    df_res = DeepFace.analyze(crop, actions=['emotion'], detector_backend='skip', enforce_detection=False, silent=True)
+                                    if isinstance(df_res, list): df_res = df_res[0]
+                                    dom = df_res.get('dominant_emotion', 'neutral')
+                                    scores = {k: round(float(v), 1) for k, v in df_res.get('emotion', {}).items()}
+                                except Exception:
+                                    pass
+                            color = EMOTION_COLORS.get(dom, (255, 255, 255))
+                            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                            draw_tag(frame, dom.upper(), (x1, y1), color)
+                            faces.append({'emotion': dom, 'scores': scores})
+            render_hud_overlay(frame, "Facial Emotion Recognition", f"Faces: {len(faces)}", (255, 200, 0))
+            res_data = {'faces': faces, 'count': len(faces)}
+
+        # 3. OCR Text
+        elif mode == 'ocr':
+            text = ""
+            if OCR_READY and ocr_reader:
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                lines = ocr_reader.readtext(gray, detail=0, paragraph=True)
+                text = '\n'.join(lines)
+            overlay = frame.copy()
+            cv2.rectangle(overlay, (0, h - 140), (w, h), (10, 15, 25), -1)
+            cv2.addWeighted(overlay, 0.8, frame, 0.2, 0, frame)
+            cv2.putText(frame, "RECOGNIZED TEXT:", (15, h - 115), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 220, 255), 1)
+            display_lines = (text or "Point camera at printed text...").split('\n')
+            for i, ln in enumerate(display_lines[:4]):
+                cv2.putText(frame, ln[:80], (15, h - 90 + (i * 22)), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 120), 1)
+            render_hud_overlay(frame, "Optical Character Recognition (OCR)", "Live Text Extractor", (0, 220, 255))
+            res_data = {'text': text or "No text recognized."}
+
+        # 4. Surveillance
+        elif mode == 'surveillance':
+            motion_boxes = motion_detector.get_motion_boxes(frame)
+            alert = len(motion_boxes) > 0
+            persons = []
+            if YOLO_READY and yolo_model and alert:
+                r = yolo_model(frame, classes=[0], conf=0.35, verbose=False)[0]
+                for box in r.boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                    draw_tag(frame, "INTRUDER", (x1, y1), (0, 0, 255))
+                    persons.append([x1, y1, x2, y2])
+            for (mx, my, mw, mh) in motion_boxes:
+                cv2.rectangle(frame, (mx, my), (mx + mw, my + mh), (0, 140, 255), 2)
+            if alert:
+                cv2.rectangle(frame, (0, 0), (w - 1, h - 1), (0, 0, 255), 4)
+            render_hud_overlay(frame, "Security Surveillance System",
+                               "WARNING: INTRUSION DETECTED" if alert else "SURVEILLANCE ACTIVE - ALL CLEAR",
+                               (0, 0, 255) if alert else (0, 230, 0))
+            res_data = {'alert': alert, 'motions': len(motion_boxes), 'persons_found': len(persons)}
+
+        _, buf = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        return jsonify({
+            'result': res_data,
+            'image': base64.b64encode(buf).decode('utf-8')
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ─── Single Image & File Upload Endpoint ──────────────────────────────────────
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
@@ -653,6 +770,7 @@ if __name__ == '__main__':
     print(f"      • EasyOCR:          {'✓ READY' if OCR_READY else '✗'}")
     print(f"      • Surveillance:     {'✓ READY'}")
     print("="*65)
-    print("      🌐 Web UI: http://127.0.0.1:5000")
+    port = int(os.environ.get('PORT', 7860))
+    print(f"      🌐 Web UI: http://0.0.0.0:{port} (Local: http://127.0.0.1:{port})")
     print("="*65 + "\n")
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
