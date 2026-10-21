@@ -2,10 +2,296 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Video Analytics Pro - All-in-One Computer Vision System</title>
-  <link rel="stylesheet" href="/static/css/style.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <title>VideoAnalytics Pro - AI Video Analytics Platform</title>
+
+  <!-- PWA & Mobile Web App Meta -->
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#0f172a"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="VideoAnalytics"/>
+
+  <!-- External AI Libraries (Client-Side for GitHub Pages) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- FontAwesome & CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link rel="stylesheet" href="static/css/style.css?v=3.0"/>
+
+  <style>
+    /* ═══════ BULLETPROOF RESPONSIVE HEADER (NO OVERLAP) ═══════ */
+    .topbar {
+      height: 56px;
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 100;
+      width: 100%;
+      box-sizing: border-box;
+      gap: 8px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .brand-icon {
+      font-size: 1.4rem;
+      color: #38bdf8;
+      flex-shrink: 0;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      white-space: nowrap;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .brand-title span {
+      color: #38bdf8;
+    }
+
+    .brand-sub {
+      font-size: 0.65rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* ═══════ MOBILE ADAPTATION (<= 860px) ═══════ */
+    @media (max-width: 860px) {
+      .topbar {
+        height: 50px;
+        padding: 0 12px;
+        overflow: hidden;
+      }
+      .brand-icon {
+        font-size: 1.25rem;
+      }
+      .brand-title {
+        font-size: 0.95rem;
+        line-height: 1;
+      }
+      /* HIDE Subtitle on mobile so it NEVER overlaps! */
+      .brand-sub {
+        display: none !important;
+      }
+      /* HIDE redundant pills on mobile header - they are in bottom navigation! */
+      #pillYolo, #pillEmo, #pillOcr, #pillSurv {
+        display: none !important;
+      }
+      .system-status {
+        margin-left: auto;
+      }
+      #pillCam {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+      }
+      .clock {
+        display: none !important;
+      }
+    }
+
+    /* Viewport & Canvas Layout */
+    .viewport-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      overflow: hidden;
+    }
+    #webcamVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #overlayCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .loading-spinner {
+      position: absolute;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(8px);
+      padding: 16px 24px;
+      border-radius: 14px;
+      border: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.88rem;
+      color: #38bdf8;
+      z-index: 50;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    /* Floating In-Video Mobile Controls */
+    .video-floating-bar {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(10px);
+      padding: 6px 14px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      z-index: 20;
+    }
+    .floating-btn {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .floating-btn:active, .floating-btn:hover {
+      background: rgba(56, 189, 248, 0.25);
+      color: #38bdf8;
+    }
+    .floating-btn.primary {
+      background: #10b981;
+      color: #000;
+      width: 44px;
+      height: 44px;
+      font-size: 1.2rem;
+    }
+    .floating-btn.primary.stop {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    /* Bottom App Navigation for Mobile */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: #0f172a;
+      border-top: 1px solid #1e293b;
+      z-index: 1000;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .mobile-nav-items {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+    .mob-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .mob-tab i {
+      font-size: 1.25rem;
+    }
+    .mob-tab.active {
+      color: #38bdf8;
+    }
+
+    @media (max-width: 860px) {
+      .mobile-bottom-nav {
+        display: flex;
+      }
+      body {
+        padding-bottom: 64px;
+        overflow-x: hidden;
+      }
+      .sidebar {
+        display: none !important;
+      }
+      .app-container {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        overflow-y: auto;
+      }
+      .video-main {
+        padding: 8px;
+        min-height: 44vh;
+        max-height: 48vh;
+      }
+      .video-card {
+        border-radius: 12px;
+      }
+      .telemetry-panel {
+        border-left: none;
+        border-top: 1px solid #1e293b;
+        padding: 14px 14px 80px 14px;
+        min-height: 350px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -13,34 +299,19 @@
   <header class="topbar">
     <div class="brand">
       <i class="fa-solid fa-brain brand-icon"></i>
-      <div>
+      <div class="brand-text">
         <div class="brand-title">VideoAnalytics <span>Pro</span></div>
-        <div class="brand-sub">Computer Vision & AI Analytics Platform</div>
+        <div class="brand-sub">AI & Computer Vision Platform</div>
       </div>
     </div>
 
     <!-- Live System Engine Badges -->
     <div class="system-status">
-      <div class="status-pill" id="pillYolo">
-        <span class="dot"></span>
-        <span>YOLOv8</span>
-      </div>
-      <div class="status-pill" id="pillEmo">
-        <span class="dot"></span>
-        <span>Emotion AI</span>
-      </div>
-      <div class="status-pill" id="pillOcr">
-        <span class="dot"></span>
-        <span>EasyOCR</span>
-      </div>
-      <div class="status-pill" id="pillSurv">
-        <span class="dot green"></span>
-        <span>Surveillance</span>
-      </div>
-      <div class="status-pill" id="pillCam">
-        <span class="dot"></span>
-        <span id="camStatusText">Camera Off</span>
-      </div>
+      <div class="status-pill" id="pillYolo"><span class="dot"></span><span>Object</span></div>
+      <div class="status-pill" id="pillEmo"><span class="dot"></span><span>Emotion</span></div>
+      <div class="status-pill" id="pillOcr"><span class="dot"></span><span>OCR</span></div>
+      <div class="status-pill" id="pillSurv"><span class="dot green"></span><span>Surv</span></div>
+      <div class="status-pill" id="pillCam"><span class="dot"></span><span id="camStatusText">Cam Off</span></div>
     </div>
 
     <div class="topbar-right">
@@ -51,42 +322,42 @@
   <!-- ═══════════════════════ MAIN WRAPPER ═══════════════════════ -->
   <div class="app-container">
 
-    <!-- ── LEFT NAVIGATION SIDEBAR ── -->
+    <!-- ── LEFT NAVIGATION SIDEBAR (Desktop) ── -->
     <aside class="sidebar">
       <div class="sidebar-label">ANALYTICS MODULES</div>
       <nav class="nav-menu">
-        <button class="nav-btn active" data-mode="object_detection" onclick="switchMode('object_detection')">
+        <button class="nav-btn active" data-mode="object_detection" onclick="setMode('object_detection')">
           <div class="icon-wrap"><i class="fa-solid fa-shapes"></i></div>
           <div class="nav-text">
             <strong>Object Detection</strong>
-            <small>80 MS-COCO Classes</small>
+            <small>80 COCO Classes (Real-Time)</small>
           </div>
           <span class="active-indicator"></span>
         </button>
 
-        <button class="nav-btn" data-mode="emotion" onclick="switchMode('emotion')">
+        <button class="nav-btn" data-mode="emotion" onclick="setMode('emotion')">
           <div class="icon-wrap"><i class="fa-regular fa-face-smile"></i></div>
           <div class="nav-text">
             <strong>Emotion Recognition</strong>
-            <small>DeepFace & MTCNN</small>
+            <small>7 Facial Emotional States</small>
           </div>
           <span class="active-indicator"></span>
         </button>
 
-        <button class="nav-btn" data-mode="ocr" onclick="switchMode('ocr')">
+        <button class="nav-btn" data-mode="ocr" onclick="setMode('ocr')">
           <div class="icon-wrap"><i class="fa-solid fa-font"></i></div>
           <div class="nav-text">
             <strong>OCR Text Extractor</strong>
-            <small>Deep Learning OCR</small>
+            <small>Optical Character AI</small>
           </div>
           <span class="active-indicator"></span>
         </button>
 
-        <button class="nav-btn" data-mode="surveillance" onclick="switchMode('surveillance')">
+        <button class="nav-btn" data-mode="surveillance" onclick="setMode('surveillance')">
           <div class="icon-wrap"><i class="fa-solid fa-shield-halved"></i></div>
           <div class="nav-text">
             <strong>Surveillance System</strong>
-            <small>Intrusion & Motion Alert</small>
+            <small>Intrusion & Motion Alarm</small>
           </div>
           <span class="active-indicator"></span>
         </button>
@@ -96,24 +367,19 @@
       <div class="sidebar-controls">
         <div class="sidebar-label">CAMERA & SOURCE</div>
 
-        <div class="input-group">
-          <label for="cameraSelect"><i class="fa-solid fa-video"></i> Camera Device:</label>
-          <select id="cameraSelect" onchange="changeCameraDevice()">
-            <option value="1" selected>Camera 1 (Webcam)</option>
-            <option value="0">Camera 0 (Default)</option>
-            <option value="2">Camera 2 (Secondary)</option>
-          </select>
-        </div>
-
-        <button class="cam-toggle start" id="btnToggleCam" onclick="toggleCamera()">
+        <button class="cam-toggle start" id="btnToggleCamDesktop" onclick="toggleWebcam()">
           <i class="fa-solid fa-play"></i> Start Camera
         </button>
 
-        <div class="upload-section">
-          <label class="btn-upload" for="fileInput">
+        <button class="btn-action full-width" onclick="flipCamera()" style="margin-top: 6px;">
+          <i class="fa-solid fa-camera-rotate"></i> Flip Camera (Front/Back)
+        </button>
+
+        <div class="upload-section" style="margin-top: 6px;">
+          <label class="btn-upload" for="fileInputDesktop">
             <i class="fa-solid fa-cloud-arrow-up"></i> Upload Test Image
           </label>
-          <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(event)"/>
+          <input type="file" id="fileInputDesktop" accept="image/*" onchange="handleImageFile(event)"/>
         </div>
       </div>
     </aside>
@@ -123,11 +389,13 @@
       <div class="video-card">
         <div class="video-header">
           <div class="header-left">
-            <span class="live-pill" id="liveBadge"><span class="pulse-dot"></span> LIVE STREAM</span>
+            <span class="live-pill" id="liveBadge"><span class="pulse-dot"></span> LIVE</span>
             <span class="mode-badge" id="activeModeBadge">Object Detection</span>
           </div>
           <div class="header-right">
-            <span class="fps-tag"><i class="fa-solid fa-bolt"></i> Real-Time</span>
+            <button class="fullscreen-btn" onclick="flipCamera()" title="Flip Camera">
+              <i class="fa-solid fa-camera-rotate"></i>
+            </button>
             <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">
               <i class="fa-solid fa-expand"></i>
             </button>
@@ -135,19 +403,40 @@
         </div>
 
         <div class="video-viewport" id="videoViewport">
-          <!-- Live MJPEG Stream -->
-          <img id="liveVideo" src="" alt="Live Video Feed" class="feed-img hidden"/>
+          <!-- Loading Overlay -->
+          <div class="loading-spinner hidden" id="modelLoader">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            <span id="modelLoaderText">Loading AI Model...</span>
+          </div>
 
-          <!-- Camera Inactive Placeholder -->
-          <div class="camera-placeholder" id="placeholder">
-            <div class="placeholder-icon">
-              <i class="fa-solid fa-video-slash"></i>
+          <!-- Video & Canvas Viewport -->
+          <div class="viewport-container">
+            <video id="webcamVideo" autoplay playsinline muted class="hidden"></video>
+            <canvas id="overlayCanvas"></canvas>
+
+            <!-- Floating Video Action Pill -->
+            <div class="video-floating-bar" id="floatingBar">
+              <button class="floating-btn" onclick="flipCamera()" title="Flip Front / Back Camera">
+                <i class="fa-solid fa-camera-rotate"></i>
+              </button>
+
+              <button class="floating-btn primary" id="btnFloatToggle" onclick="toggleWebcam()" title="Start / Stop Camera">
+                <i class="fa-solid fa-play"></i>
+              </button>
+
+              <label class="floating-btn" for="fileInputMobile" title="Upload Image" style="margin-bottom: 0;">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+              </label>
+              <input type="file" id="fileInputMobile" accept="image/*" onchange="handleImageFile(event)" style="display: none;"/>
             </div>
-            <h3>Camera is Currently Stopped</h3>
-            <p>Click the <strong>Start Camera</strong> button on the left panel to begin real-time computer vision analytics.</p>
-            <div class="quick-actions">
-              <button class="btn-primary" onclick="toggleCamera()">
-                <i class="fa-solid fa-play"></i> Start Live Camera
+
+            <!-- Camera Inactive Placeholder -->
+            <div class="camera-placeholder" id="placeholder">
+              <div class="placeholder-icon"><i class="fa-solid fa-video-slash"></i></div>
+              <h3>Camera is Stopped</h3>
+              <p>Tap <strong>Start Camera</strong> to begin live AI analytics directly on your phone or laptop.</p>
+              <button class="btn-primary" onclick="toggleWebcam()">
+                <i class="fa-solid fa-play"></i> Start Camera
               </button>
             </div>
           </div>
@@ -155,65 +444,47 @@
 
         <!-- Video Footer Status Bar -->
         <div class="video-footer">
-          <div class="footer-item">
-            <span class="label">Resolution:</span>
-            <span class="val">640 × 480</span>
-          </div>
-          <div class="footer-item">
-            <span class="label">Backend:</span>
-            <span class="val">OpenCV + PyTorch</span>
-          </div>
-          <div class="footer-item">
-            <span class="label">Latency:</span>
-            <span class="val text-success">Low Latency (~25ms)</span>
-          </div>
+          <div class="footer-item"><span class="label">Engine:</span><span class="val">TensorFlow.js + FaceAPI</span></div>
+          <div class="footer-item"><span class="label">Platform:</span><span class="val text-success">Mobile Ready</span></div>
           <div class="footer-item shortcuts-hint">
-            <span>Keys: <strong>1</strong>-<strong>4</strong> Switch Modes | <strong>Space</strong> Toggle Cam</span>
+            <span>Keys: <strong>1-4</strong> Switch Modes | <strong>Space</strong> Cam</span>
           </div>
         </div>
       </div>
     </main>
 
-    <!-- ── RIGHT: LIVE ANALYTICS TELEMETRY PANEL ── -->
+    <!-- ── RIGHT / BOTTOM: LIVE ANALYTICS TELEMETRY PANEL ── -->
     <aside class="telemetry-panel">
 
       <!-- 1. OBJECT DETECTION TELEMETRY -->
       <div class="telemetry-card" id="card_object_detection">
-        <div class="card-title">
-          <i class="fa-solid fa-shapes text-accent"></i>
-          <span>Detected Objects</span>
-        </div>
+        <div class="card-title"><i class="fa-solid fa-shapes text-accent"></i><span>Detected Objects</span></div>
         <div class="metric-row">
           <div class="metric-box">
             <div class="metric-number" id="objCountVal">0</div>
-            <div class="metric-sub">Objects in Frame</div>
+            <div class="metric-sub">Objects in Scene</div>
           </div>
         </div>
         <div class="tag-container" id="objTagList">
           <div class="empty-state">No objects currently detected</div>
         </div>
         <div class="info-callout">
-          <strong>YOLOv8 Nano:</strong> High-speed object detector tracking 80 real-world object classes simultaneously in real time.
+          <strong>COCO-SSD Neural Network:</strong> Real-time edge inference detecting 80 classes of everyday objects, animals, and electronics.
         </div>
       </div>
 
       <!-- 2. EMOTION RECOGNITION TELEMETRY -->
       <div class="telemetry-card hidden" id="card_emotion">
-        <div class="card-title">
-          <i class="fa-regular fa-face-smile text-warning"></i>
-          <span>Facial Emotion Telemetry</span>
-        </div>
+        <div class="card-title"><i class="fa-regular fa-face-smile text-warning"></i><span>Facial Emotion Telemetry</span></div>
         <div class="metric-row">
           <div class="metric-box">
             <div class="metric-number" id="faceCountVal">0</div>
             <div class="metric-sub">Faces Analyzed</div>
           </div>
         </div>
-
         <div id="facesContainer" class="faces-breakdown">
           <div class="empty-state">Looking for human faces...</div>
         </div>
-
         <div class="emotion-legend-grid">
           <span class="legend-chip angry">😡 Angry</span>
           <span class="legend-chip happy">😊 Happy</span>
@@ -227,50 +498,34 @@
 
       <!-- 3. OCR TEXT TELEMETRY -->
       <div class="telemetry-card hidden" id="card_ocr">
-        <div class="card-title">
-          <i class="fa-solid fa-font text-info"></i>
-          <span>Extracted Text (OCR)</span>
-        </div>
-
+        <div class="card-title"><i class="fa-solid fa-font text-info"></i><span>Extracted Text (OCR)</span></div>
         <div class="ocr-output-box" id="ocrOutputBox">
           Scanning scene for text...
         </div>
-
         <div class="ocr-action-bar">
-          <button class="btn-action" onclick="copyExtractedText()">
-            <i class="fa-solid fa-copy"></i> Copy Text
-          </button>
-          <button class="btn-action" onclick="clearOcrText()">
-            <i class="fa-solid fa-rotate-left"></i> Clear
-          </button>
+          <button class="btn-action" onclick="copyOcrText()"><i class="fa-solid fa-copy"></i> Copy Text</button>
+          <button class="btn-action" onclick="runManualOcr()"><i class="fa-solid fa-camera"></i> Snapshot OCR</button>
         </div>
-
         <div class="info-callout">
-          <strong>Deep Learning OCR:</strong> Recognizes printed text from documents, labels, books, street signs, and monitors.
+          <strong>Tesseract.js OCR:</strong> Extracts text from books, documents, slides, and printed labels.
         </div>
       </div>
 
       <!-- 4. SURVEILLANCE TELEMETRY -->
       <div class="telemetry-card hidden" id="card_surveillance">
-        <div class="card-title">
-          <i class="fa-solid fa-shield-halved text-danger"></i>
-          <span>Surveillance Security HUD</span>
-        </div>
-
+        <div class="card-title"><i class="fa-solid fa-shield-halved text-danger"></i><span>Surveillance Security HUD</span></div>
         <div class="alert-banner" id="surveillanceBanner">
           <div class="banner-icon"><i class="fa-solid fa-shield-check"></i></div>
           <div class="banner-content">
-            <strong id="survStatusTitle">All Clear</strong>
-            <p id="survStatusSub">Continuous background monitoring active</p>
+            <strong id="survStatusTitle">Monitoring Active</strong>
+            <p id="survStatusSub">Zero intrusions detected. Area secured.</p>
           </div>
         </div>
-
         <div class="section-heading">Security Incident Log</div>
         <div class="alerts-history" id="alertsList">
           <div class="empty-state">No security incidents recorded</div>
         </div>
-
-        <button class="btn-action full-width" onclick="clearAlertHistory()">
+        <button class="btn-action full-width" onclick="clearIncidents()">
           <i class="fa-solid fa-trash-can"></i> Clear Incident Log
         </button>
       </div>
@@ -279,25 +534,29 @@
 
   </div>
 
-  <!-- ═══════════════════════ UPLOAD RESULT MODAL ═══════════════════════ -->
-  <div class="modal-overlay hidden" id="uploadModal" onclick="closeModalOnBackdrop(event)">
-    <div class="modal-container">
-      <div class="modal-header">
-        <div class="modal-title"><i class="fa-solid fa-circle-check text-success"></i> Upload Analysis Result</div>
-        <button class="modal-close" onclick="closeUploadModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="modal-media">
-          <img id="modalResultImg" src="" alt="Analyzed Result"/>
-        </div>
-        <div class="modal-data">
-          <h4>Analytics Output:</h4>
-          <pre id="modalJsonResult">Processing...</pre>
-        </div>
-      </div>
+  <!-- ═══════════════════════ MOBILE BOTTOM NAVIGATION ═══════════════════════ -->
+  <nav class="mobile-bottom-nav">
+    <div class="mobile-nav-items">
+      <button class="mob-tab active" data-mode="object_detection" onclick="setMode('object_detection')">
+        <i class="fa-solid fa-shapes"></i>
+        <span>Objects</span>
+      </button>
+      <button class="mob-tab" data-mode="emotion" onclick="setMode('emotion')">
+        <i class="fa-regular fa-face-smile"></i>
+        <span>Emotion</span>
+      </button>
+      <button class="mob-tab" data-mode="ocr" onclick="setMode('ocr')">
+        <i class="fa-solid fa-font"></i>
+        <span>OCR</span>
+      </button>
+      <button class="mob-tab" data-mode="surveillance" onclick="setMode('surveillance')">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Security</span>
+      </button>
     </div>
-  </div>
+  </nav>
 
-  <script src="/static/js/app.js"></script>
+  <!-- Client-Side Video Analytics JS Logic -->
+  <script src="static/js/client_app.js?v=3.0"></script>
 </body>
 </html>
