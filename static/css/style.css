@@ -887,19 +887,19 @@ body {
 /* ─── Ultra-Luxury Floating In-Video Mobile Controls ─── */
 .video-floating-bar {
   position: absolute;
-  bottom: 18px;
+  bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: rgba(0, 0, 0, 0.92);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  padding: 8px 18px;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  padding: 4px 10px;
   border-radius: var(--radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 242, 254, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 242, 254, 0.15);
   z-index: 25;
   transition: all 0.25s ease;
 }
@@ -908,9 +908,9 @@ body {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-glass);
   color: #ffffff;
-  font-size: 1.15rem;
-  width: 42px;
-  height: 42px;
+  font-size: 0.82rem;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -923,7 +923,7 @@ body {
   background: rgba(0, 242, 254, 0.2);
   border-color: var(--neon-cyan);
   color: var(--neon-cyan);
-  box-shadow: 0 0 14px rgba(0, 242, 254, 0.4);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.35);
   transform: scale(1.08);
 }
 
@@ -933,29 +933,29 @@ body {
 
 /* Master Primary Toggle in Floating Bar */
 .floating-btn.primary {
-  width: 48px;
-  height: 48px;
+  width: 34px;
+  height: 34px;
   background: linear-gradient(135deg, #10b981, #06b6d4);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #032014;
-  font-size: 1.25rem;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+  font-size: 0.90rem;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
 }
 
 .floating-btn.primary:hover {
-  box-shadow: 0 0 30px rgba(16, 185, 129, 0.9);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
   color: #000000;
-  transform: scale(1.12);
+  transform: scale(1.1);
 }
 
 .floating-btn.primary.stop {
   background: linear-gradient(135deg, #ef4444, #f43f5e);
   color: #ffffff;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.5);
 }
 
 .floating-btn.primary.stop:hover {
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.9);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
 }
 
 /* Video Card Footer */
@@ -1569,21 +1569,21 @@ body {
   }
 
   .video-floating-bar {
-    bottom: 12px;
-    padding: 6px 14px;
-    gap: 12px;
+    bottom: 10px;
+    padding: 4px 10px;
+    gap: 8px;
   }
 
   .floating-btn {
-    width: 38px;
-    height: 38px;
-    font-size: 1.05rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.82rem;
   }
 
   .floating-btn.primary {
-    width: 44px;
-    height: 44px;
-    font-size: 1.15rem;
+    width: 34px;
+    height: 34px;
+    font-size: 0.90rem;
   }
 
   .telemetry-panel {
