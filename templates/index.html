@@ -21,18 +21,18 @@
 
   <!-- FontAwesome & CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-  <link rel="stylesheet" href="static/css/style.css?v=3.0"/>
+  <link rel="stylesheet" href="static/css/style.css?v=4.0"/>
 
   <style>
-    /* ═══════ BULLETPROOF RESPONSIVE HEADER (NO OVERLAP) ═══════ */
+    /* ═══════════ REFINED PREMIUM TOPBAR (PIXEL-PERFECT ALIGNMENT) ═══════════ */
     .topbar {
-      height: 56px;
+      height: 60px;
       background: #0f172a;
       border-bottom: 1px solid #1e293b;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 16px;
+      padding: 0 14px;
       z-index: 100;
       width: 100%;
       box-sizing: border-box;
@@ -42,53 +42,83 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-shrink: 0;
-      min-width: 0;
+      margin: 0;
+      padding: 0;
     }
 
     .brand-icon {
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       color: #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
     }
 
-    .brand-text {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-width: 0;
-    }
-
     .brand-title {
-      font-size: 1.05rem;
+      font-size: 0.96rem;
       font-weight: 800;
-      color: #f1f5f9;
-      white-space: nowrap;
-      line-height: 1.2;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .brand-title span {
-      color: #38bdf8;
-    }
-
-    .brand-sub {
-      font-size: 0.65rem;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      color: #f8fafc;
       white-space: nowrap;
       line-height: 1;
-      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 0;
+      padding: 0;
+      letter-spacing: -0.2px;
+    }
+
+    .pro-badge {
+      background: rgba(56, 189, 248, 0.18);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      color: #38bdf8;
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 2px 5px;
+      border-radius: 5px;
+      letter-spacing: 0.5px;
+      line-height: 1;
     }
 
     .system-status {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
+      flex-shrink: 0;
+      margin-left: auto;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .system-status::-webkit-scrollbar {
+      display: none;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #141e33;
+      border: 1px solid #24344d;
+      padding: 4px 7px;
+      border-radius: 12px;
+      font-size: 0.66rem;
+      color: #cbd5e1;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .status-pill .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 5px rgba(16, 185, 129, 0.8);
       flex-shrink: 0;
     }
 
@@ -99,37 +129,20 @@
       flex-shrink: 0;
     }
 
-    /* ═══════ MOBILE ADAPTATION (<= 860px) ═══════ */
     @media (max-width: 860px) {
       .topbar {
-        height: 50px;
-        padding: 0 12px;
-        overflow: hidden;
-      }
-      .brand-icon {
-        font-size: 1.25rem;
+        height: 56px;
+        padding: 0 10px;
       }
       .brand-title {
-        font-size: 0.95rem;
-        line-height: 1;
+        font-size: 0.90rem;
       }
-      /* HIDE Subtitle on mobile so it NEVER overlaps! */
-      .brand-sub {
+      .topbar-right {
         display: none !important;
       }
-      /* HIDE redundant pills on mobile header - they are in bottom navigation! */
-      #pillYolo, #pillEmo, #pillOcr, #pillSurv {
-        display: none !important;
-      }
-      .system-status {
-        margin-left: auto;
-      }
-      #pillCam {
-        padding: 4px 8px;
-        font-size: 0.7rem;
-      }
-      .clock {
-        display: none !important;
+      .status-pill {
+        padding: 3px 6px;
+        font-size: 0.62rem;
       }
     }
 
@@ -299,9 +312,8 @@
   <header class="topbar">
     <div class="brand">
       <i class="fa-solid fa-brain brand-icon"></i>
-      <div class="brand-text">
-        <div class="brand-title">VideoAnalytics <span>Pro</span></div>
-        <div class="brand-sub">AI & Computer Vision Platform</div>
+      <div class="brand-title">
+        VideoAnalytics <span class="pro-badge">PRO</span>
       </div>
     </div>
 
@@ -310,8 +322,7 @@
       <div class="status-pill" id="pillYolo"><span class="dot"></span><span>Object</span></div>
       <div class="status-pill" id="pillEmo"><span class="dot"></span><span>Emotion</span></div>
       <div class="status-pill" id="pillOcr"><span class="dot"></span><span>OCR</span></div>
-      <div class="status-pill" id="pillSurv"><span class="dot green"></span><span>Surv</span></div>
-      <div class="status-pill" id="pillCam"><span class="dot"></span><span id="camStatusText">Cam Off</span></div>
+      <div class="status-pill" id="pillSurv"><span class="dot"></span><span>Surv</span></div>
     </div>
 
     <div class="topbar-right">
@@ -557,6 +568,6 @@
   </nav>
 
   <!-- Client-Side Video Analytics JS Logic -->
-  <script src="static/js/client_app.js?v=3.0"></script>
+  <script src="static/js/client_app.js?v=4.0"></script>
 </body>
 </html>
