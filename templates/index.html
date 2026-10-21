@@ -26,7 +26,7 @@
 
   <!-- FontAwesome Icons & Ultra-Luxury Master CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-  <link rel="stylesheet" href="static/css/style.css?v=5.3"/>
+  <link rel="stylesheet" href="static/css/style.css?v=5.4"/>
   <style>
     /* Ultra-Compact Micro Video Pill */
     .video-floating-bar {
@@ -210,8 +210,8 @@
             <video id="webcamVideo" autoplay playsinline muted class="hidden"></video>
             <canvas id="overlayCanvas"></canvas>
 
-            <!-- Floating Video Action Pill -->
-            <div class="video-floating-bar" id="floatingBar">
+            <!-- Floating Video Action Pill (Only shows during active stream/image) -->
+            <div class="video-floating-bar hidden" id="floatingBar">
               <button class="floating-btn" onclick="flipCamera()" title="Flip Front / Back Camera">
                 <i class="fa-solid fa-camera-rotate"></i>
               </button>
@@ -231,9 +231,15 @@
               <div class="placeholder-icon"><i class="fa-solid fa-video-slash"></i></div>
               <h3>Neural Video Stream Inactive</h3>
               <p>Tap <strong>Start Camera</strong> to launch edge AI analytics with real-time HUD rendering.</p>
-              <button class="btn-primary" onclick="toggleWebcam()">
-                <i class="fa-solid fa-play"></i> Start Camera
-              </button>
+              <div class="placeholder-actions">
+                <button class="btn-primary" onclick="toggleWebcam()">
+                  <i class="fa-solid fa-play"></i> Start Camera
+                </button>
+                <label class="btn-action-pill" for="fileInputPlaceholder">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+                </label>
+                <input type="file" id="fileInputPlaceholder" accept="image/*" onchange="handleImageFile(event)" style="display: none;"/>
+              </div>
             </div>
           </div>
         </div>
@@ -353,6 +359,6 @@ Scanning scene for printed or digital text...
   </nav>
 
   <!-- Client-Side Video Analytics JS Logic -->
-  <script src="static/js/client_app.js?v=5.1"></script>
+  <script src="static/js/client_app.js?v=5.4"></script>
 </body>
 </html>

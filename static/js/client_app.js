@@ -167,6 +167,8 @@ async function toggleWebcam() {
       video.classList.remove('hidden');
       placeholder.classList.add('hidden');
       if (liveBadge) liveBadge.style.display = 'inline-flex';
+      const floatingBar = document.getElementById('floatingBar');
+      if (floatingBar) floatingBar.classList.remove('hidden');
 
       isWebcamRunning = true;
       updateButtonStates('running');
@@ -193,6 +195,8 @@ async function toggleWebcam() {
     video.classList.add('hidden');
     placeholder.classList.remove('hidden');
     if (liveBadge) liveBadge.style.display = 'none';
+    const floatingBar = document.getElementById('floatingBar');
+    if (floatingBar) floatingBar.classList.add('hidden');
 
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -603,6 +607,10 @@ async function handleImageFile(e) {
     canvas.height = img.height;
 
     ctx.drawImage(img, 0, 0);
+    const placeholder = document.getElementById('placeholder');
+    if (placeholder) placeholder.classList.add('hidden');
+    const floatingBar = document.getElementById('floatingBar');
+    if (floatingBar) floatingBar.classList.remove('hidden');
 
     if (currentMode === 'object_detection' && cocoModel) {
       const preds = await cocoModel.detect(img);
