@@ -1,0 +1,10 @@
+flask>=3.0.0
+flask-cors>=4.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+pillow>=10.0.0
+ultralytics>=8.0.0
+deepface>=0.0.90
+fer>=22.5.1
+pytesseract>=0.3.10
+easyocr>=1.7.0

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Analytics Pro - All-in-One Computer Vision System</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+</head>
+<body>
+
+  <!-- ═══════════════════════ TOP HEADER ═══════════════════════ -->
+  <header class="topbar">
+    <div class="brand">
+      <i class="fa-solid fa-brain brand-icon"></i>
+      <div>
+        <div class="brand-title">VideoAnalytics <span>Pro</span></div>
+        <div class="brand-sub">Computer Vision & AI Analytics Platform</div>
+      </div>
+    </div>
+
+    <!-- Live System Engine Badges -->
+    <div class="system-status">
+      <div class="status-pill" id="pillYolo">
+        <span class="dot"></span>
+        <span>YOLOv8</span>
+      </div>
+      <div class="status-pill" id="pillEmo">
+        <span class="dot"></span>
+        <span>Emotion AI</span>
+      </div>
+      <div class="status-pill" id="pillOcr">
+        <span class="dot"></span>
+        <span>EasyOCR</span>
+      </div>
+      <div class="status-pill" id="pillSurv">
+        <span class="dot green"></span>
+        <span>Surveillance</span>
+      </div>
+      <div class="status-pill" id="pillCam">
+        <span class="dot"></span>
+        <span id="camStatusText">Camera Off</span>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="clock" id="liveClock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════ MAIN WRAPPER ═══════════════════════ -->
+  <div class="app-container">
+
+    <!-- ── LEFT NAVIGATION SIDEBAR ── -->
+    <aside class="sidebar">
+      <div class="sidebar-label">ANALYTICS MODULES</div>
+      <nav class="nav-menu">
+        <button class="nav-btn active" data-mode="object_detection" onclick="switchMode('object_detection')">
+          <div class="icon-wrap"><i class="fa-solid fa-shapes"></i></div>
+          <div class="nav-text">
+            <strong>Object Detection</strong>
+            <small>80 MS-COCO Classes</small>
+          </div>
+          <span class="active-indicator"></span>
+        </button>
+
+        <button class="nav-btn" data-mode="emotion" onclick="switchMode('emotion')">
+          <div class="icon-wrap"><i class="fa-regular fa-face-smile"></i></div>
+          <div class="nav-text">
+            <strong>Emotion Recognition</strong>
+            <small>DeepFace & MTCNN</small>
+          </div>
+          <span class="active-indicator"></span>
+        </button>
+
+        <button class="nav-btn" data-mode="ocr" onclick="switchMode('ocr')">
+          <div class="icon-wrap"><i class="fa-solid fa-font"></i></div>
+          <div class="nav-text">
+            <strong>OCR Text Extractor</strong>
+            <small>Deep Learning OCR</small>
+          </div>
+          <span class="active-indicator"></span>
+        </button>
+
+        <button class="nav-btn" data-mode="surveillance" onclick="switchMode('surveillance')">
+          <div class="icon-wrap"><i class="fa-solid fa-shield-halved"></i></div>
+          <div class="nav-text">
+            <strong>Surveillance System</strong>
+            <small>Intrusion & Motion Alert</small>
+          </div>
+          <span class="active-indicator"></span>
+        </button>
+      </nav>
+
+      <!-- Hardware & Input Controls -->
+      <div class="sidebar-controls">
+        <div class="sidebar-label">CAMERA & SOURCE</div>
+
+        <div class="input-group">
+          <label for="cameraSelect"><i class="fa-solid fa-video"></i> Camera Device:</label>
+          <select id="cameraSelect" onchange="changeCameraDevice()">
+            <option value="1" selected>Camera 1 (Webcam)</option>
+            <option value="0">Camera 0 (Default)</option>
+            <option value="2">Camera 2 (Secondary)</option>
+          </select>
+        </div>
+
+        <button class="cam-toggle start" id="btnToggleCam" onclick="toggleCamera()">
+          <i class="fa-solid fa-play"></i> Start Camera
+        </button>
+
+        <div class="upload-section">
+          <label class="btn-upload" for="fileInput">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Test Image
+          </label>
+          <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(event)"/>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── CENTER: LIVE VIDEO STREAM PANEL ── -->
+    <main class="video-main">
+      <div class="video-card">
+        <div class="video-header">
+          <div class="header-left">
+            <span class="live-pill" id="liveBadge"><span class="pulse-dot"></span> LIVE STREAM</span>
+            <span class="mode-badge" id="activeModeBadge">Object Detection</span>
+          </div>
+          <div class="header-right">
+            <span class="fps-tag"><i class="fa-solid fa-bolt"></i> Real-Time</span>
+            <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">
+              <i class="fa-solid fa-expand"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="video-viewport" id="videoViewport">
+          <!-- Live MJPEG Stream -->
+          <img id="liveVideo" src="" alt="Live Video Feed" class="feed-img hidden"/>
+
+          <!-- Camera Inactive Placeholder -->
+          <div class="camera-placeholder" id="placeholder">
+            <div class="placeholder-icon">
+              <i class="fa-solid fa-video-slash"></i>
+            </div>
+            <h3>Camera is Currently Stopped</h3>
+            <p>Click the <strong>Start Camera</strong> button on the left panel to begin real-time computer vision analytics.</p>
+            <div class="quick-actions">
+              <button class="btn-primary" onclick="toggleCamera()">
+                <i class="fa-solid fa-play"></i> Start Live Camera
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video Footer Status Bar -->
+        <div class="video-footer">
+          <div class="footer-item">
+            <span class="label">Resolution:</span>
+            <span class="val">640 × 480</span>
+          </div>
+          <div class="footer-item">
+            <span class="label">Backend:</span>
+            <span class="val">OpenCV + PyTorch</span>
+          </div>
+          <div class="footer-item">
+            <span class="label">Latency:</span>
+            <span class="val text-success">Low Latency (~25ms)</span>
+          </div>
+          <div class="footer-item shortcuts-hint">
+            <span>Keys: <strong>1</strong>-<strong>4</strong> Switch Modes | <strong>Space</strong> Toggle Cam</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ── RIGHT: LIVE ANALYTICS TELEMETRY PANEL ── -->
+    <aside class="telemetry-panel">
+
+      <!-- 1. OBJECT DETECTION TELEMETRY -->
+      <div class="telemetry-card" id="card_object_detection">
+        <div class="card-title">
+          <i class="fa-solid fa-shapes text-accent"></i>
+          <span>Detected Objects</span>
+        </div>
+        <div class="metric-row">
+          <div class="metric-box">
+            <div class="metric-number" id="objCountVal">0</div>
+            <div class="metric-sub">Objects in Frame</div>
+          </div>
+        </div>
+        <div class="tag-container" id="objTagList">
+          <div class="empty-state">No objects currently detected</div>
+        </div>
+        <div class="info-callout">
+          <strong>YOLOv8 Nano:</strong> High-speed object detector tracking 80 real-world object classes simultaneously in real time.
+        </div>
+      </div>
+
+      <!-- 2. EMOTION RECOGNITION TELEMETRY -->
+      <div class="telemetry-card hidden" id="card_emotion">
+        <div class="card-title">
+          <i class="fa-regular fa-face-smile text-warning"></i>
+          <span>Facial Emotion Telemetry</span>
+        </div>
+        <div class="metric-row">
+          <div class="metric-box">
+            <div class="metric-number" id="faceCountVal">0</div>
+            <div class="metric-sub">Faces Analyzed</div>
+          </div>
+        </div>
+
+        <div id="facesContainer" class="faces-breakdown">
+          <div class="empty-state">Looking for human faces...</div>
+        </div>
+
+        <div class="emotion-legend-grid">
+          <span class="legend-chip angry">😡 Angry</span>
+          <span class="legend-chip happy">😊 Happy</span>
+          <span class="legend-chip neutral">😐 Neutral</span>
+          <span class="legend-chip surprise">😲 Surprise</span>
+          <span class="legend-chip sad">😢 Sad</span>
+          <span class="legend-chip fear">😨 Fear</span>
+          <span class="legend-chip disgust">🤢 Disgust</span>
+        </div>
+      </div>
+
+      <!-- 3. OCR TEXT TELEMETRY -->
+      <div class="telemetry-card hidden" id="card_ocr">
+        <div class="card-title">
+          <i class="fa-solid fa-font text-info"></i>
+          <span>Extracted Text (OCR)</span>
+        </div>
+
+        <div class="ocr-output-box" id="ocrOutputBox">
+          Scanning scene for text...
+        </div>
+
+        <div class="ocr-action-bar">
+          <button class="btn-action" onclick="copyExtractedText()">
+            <i class="fa-solid fa-copy"></i> Copy Text
+          </button>
+          <button class="btn-action" onclick="clearOcrText()">
+            <i class="fa-solid fa-rotate-left"></i> Clear
+          </button>
+        </div>
+
+        <div class="info-callout">
+          <strong>Deep Learning OCR:</strong> Recognizes printed text from documents, labels, books, street signs, and monitors.
+        </div>
+      </div>
+
+      <!-- 4. SURVEILLANCE TELEMETRY -->
+      <div class="telemetry-card hidden" id="card_surveillance">
+        <div class="card-title">
+          <i class="fa-solid fa-shield-halved text-danger"></i>
+          <span>Surveillance Security HUD</span>
+        </div>
+
+        <div class="alert-banner" id="surveillanceBanner">
+          <div class="banner-icon"><i class="fa-solid fa-shield-check"></i></div>
+          <div class="banner-content">
+            <strong id="survStatusTitle">All Clear</strong>
+            <p id="survStatusSub">Continuous background monitoring active</p>
+          </div>
+        </div>
+
+        <div class="section-heading">Security Incident Log</div>
+        <div class="alerts-history" id="alertsList">
+          <div class="empty-state">No security incidents recorded</div>
+        </div>
+
+        <button class="btn-action full-width" onclick="clearAlertHistory()">
+          <i class="fa-solid fa-trash-can"></i> Clear Incident Log
+        </button>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- ═══════════════════════ UPLOAD RESULT MODAL ═══════════════════════ -->
+  <div class="modal-overlay hidden" id="uploadModal" onclick="closeModalOnBackdrop(event)">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fa-solid fa-circle-check text-success"></i> Upload Analysis Result</div>
+        <button class="modal-close" onclick="closeUploadModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-media">
+          <img id="modalResultImg" src="" alt="Analyzed Result"/>
+        </div>
+        <div class="modal-data">
+          <h4>Analytics Output:</h4>
+          <pre id="modalJsonResult">Processing...</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

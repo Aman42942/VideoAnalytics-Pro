@@ -1,0 +1,24 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+venv/
+env/
+ENV/
+
+# Temporary and log files
+server_out.txt
+server_err.txt
+*.log
+
+# Uploads and temporary alert snapshots
+uploads/*
+!uploads/.gitkeep
+static/alerts/*
+!static/alerts/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db
