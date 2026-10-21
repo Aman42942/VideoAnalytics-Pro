@@ -1,0 +1,13 @@
+{
+  "name": "VideoAnalytics Pro",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "forwardPorts": [5000],
+  "portsAttributes": {
+    "5000": {
+      "label": "VideoAnalytics Pro Live Web App",
+      "onAutoForward": "openPreview",
+      "visibility": "public"
+    }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y libgl1 libglib2.0-0 && pip install --no-cache-dir -r requirements.txt"
+}

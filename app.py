@@ -770,7 +770,7 @@ if __name__ == '__main__':
     print(f"      • EasyOCR:          {'✓ READY' if OCR_READY else '✗'}")
     print(f"      • Surveillance:     {'✓ READY'}")
     print("="*65)
-    port = int(os.environ.get('PORT', 7860))
+    port = int(os.environ.get('PORT', 5000))
     print(f"      🌐 Web UI: http://0.0.0.0:{port} (Local: http://127.0.0.1:{port})")
     print("="*65 + "\n")
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
