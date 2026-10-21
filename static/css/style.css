@@ -933,7 +933,7 @@ input[type="file"] {
 ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
 
-/* Responsive adjustments */
+/* Responsive adjustments (Mobile Native App Look & Feel) */
 @media (max-width: 1080px) {
   .app-container {
     grid-template-columns: 220px 1fr 280px;
@@ -941,11 +941,131 @@ input[type="file"] {
 }
 
 @media (max-width: 860px) {
-  .app-container {
-    grid-template-columns: 1fr;
-    overflow-y: auto;
+  :root {
+    --topbar-h: 54px;
   }
-  .sidebar, .telemetry-panel {
-    border: none;
+
+  body {
+    height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    padding: 0 12px;
+  }
+
+  .brand-icon {
+    font-size: 1.3rem;
+  }
+
+  .brand-title {
+    font-size: 1rem;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .system-status {
+    gap: 6px;
+  }
+
+  .status-pill {
+    padding: 3px 6px;
+    font-size: 0.65rem;
+  }
+
+  .clock {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+  }
+
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - var(--topbar-h) - 64px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    grid-template-columns: 1fr;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+
+  .video-main {
+    padding: 8px 10px;
+    flex: none;
+    min-height: 40vh;
+    max-height: 48vh;
+  }
+
+  .video-card {
+    border-radius: 12px;
+  }
+
+  .video-header {
+    height: 42px;
+    padding: 0 12px;
+  }
+
+  .video-footer {
+    display: none;
+  }
+
+  .camera-placeholder {
+    padding: 16px;
+  }
+
+  .placeholder-icon {
+    font-size: 2.2rem;
+    margin-bottom: 8px;
+  }
+
+  .camera-placeholder h3 {
+    font-size: 1rem;
+  }
+
+  .camera-placeholder p {
+    font-size: 0.75rem;
+    margin-bottom: 12px;
+  }
+
+  .telemetry-panel {
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+    padding: 12px 14px 80px 14px;
+    flex: 1;
+    overflow-y: visible;
+  }
+
+  .telemetry-card {
+    gap: 10px;
+  }
+
+  .card-title {
+    font-size: 0.88rem;
+  }
+
+  .metric-number {
+    font-size: 1.8rem;
+  }
+
+  .metric-box {
+    padding: 8px;
+  }
+
+  .tag-container {
+    max-height: 140px;
+  }
+
+  .ocr-output-box {
+    min-height: 120px;
+    max-height: 200px;
+  }
+
+  .alerts-history {
+    max-height: 180px;
   }
 }

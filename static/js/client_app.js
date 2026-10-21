@@ -1,18 +1,18 @@
 /**
- * VideoAnalytics Pro - GitHub Pages Client-Side Controller
- * High-performance edge AI running 100% in the browser
+ * VideoAnalytics Pro - Client-Side Controller
+ * High-performance edge AI running 100% in the browser (Desktop & Mobile App UX)
  */
 
 let currentMode = 'object_detection';
 let isWebcamRunning = false;
 let videoStream = null;
 let animationFrameId = null;
+let currentFacingMode = 'user'; // 'user' (selfie) or 'environment' (back camera)
 
 // Models
 let cocoModel = null;
 let isFaceApiLoaded = false;
 let isOcrProcessing = false;
-let tesseractWorker = null;
 
 // Surveillance state
 let lastFrameData = null;
@@ -55,7 +55,6 @@ function initClock() {
 async function preloadModels() {
   showLoader('Loading Object Detection AI...');
   try {
-    // 1. Load COCO-SSD
     if (typeof cocoSsd !== 'undefined') {
       cocoModel = await cocoSsd.load();
       setDot('pillYolo', true);
@@ -66,7 +65,6 @@ async function preloadModels() {
 
   showLoader('Loading Face & Emotion AI...');
   try {
-    // 2. Load Face API Models
     if (typeof faceapi !== 'undefined') {
       const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
       await Promise.all([
@@ -105,12 +103,18 @@ function setDot(id, active) {
   if (dot) dot.className = active ? 'dot green' : 'dot';
 }
 
-// ─── Mode Switching ──────────────────────────────────────────────────────────
+// ─── Mode Switching (Syncs Desktop Sidebar & Mobile Bottom Nav) ──────────────
 function setMode(newMode) {
   currentMode = newMode;
 
+  // Sync Desktop Sidebar
   document.querySelectorAll('.nav-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === newMode);
+  });
+
+  // Sync Mobile Bottom Tabs
+  document.querySelectorAll('.mob-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.mode === newMode);
   });
 
   const badge = document.getElementById('activeModeBadge');
@@ -132,23 +136,29 @@ async function toggleWebcam() {
   const canvas = document.getElementById('overlayCanvas');
   const placeholder = document.getElementById('placeholder');
   const liveBadge = document.getElementById('liveBadge');
-  const btn = document.getElementById('btnToggleCam');
+  const btnDesktop = document.getElementById('btnToggleCamDesktop');
+  const btnFloat = document.getElementById('btnFloatToggle');
   const camText = document.getElementById('camStatusText');
 
   if (!isWebcamRunning) {
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Starting...';
-    btn.disabled = true;
+    updateButtonStates('loading');
 
     try {
       videoStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 } },
+        video: {
+          facingMode: currentFacingMode,
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
         audio: false
       });
 
       video.srcObject = videoStream;
       await video.play();
 
-      // Size canvas to video dimensions
+      // Mirror selfie camera for natural view, keep back camera unmirrored
+      video.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
 
@@ -157,20 +167,16 @@ async function toggleWebcam() {
       liveBadge.style.display = 'inline-flex';
 
       isWebcamRunning = true;
-      btn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop Camera';
-      btn.className = 'cam-toggle stop';
-      btn.disabled = false;
+      updateButtonStates('running');
       setDot('pillCam', true);
-      camText.textContent = 'Camera Active';
+      camText.textContent = (currentFacingMode === 'user') ? 'Front Cam' : 'Back Cam';
 
       // Start Real-Time Render Loop
       renderLoop();
 
     } catch (err) {
-      alert('Camera access denied or unavailable: ' + err.message);
-      btn.innerHTML = '<i class="fa-solid fa-play"></i> Start Camera';
-      btn.className = 'cam-toggle start';
-      btn.disabled = false;
+      alert('Camera access error: ' + err.message);
+      updateButtonStates('stopped');
     }
   } else {
     // Stop Webcam
@@ -186,15 +192,62 @@ async function toggleWebcam() {
     placeholder.classList.remove('hidden');
     liveBadge.style.display = 'none';
 
-    // Clear canvas
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     isWebcamRunning = false;
-    btn.innerHTML = '<i class="fa-solid fa-play"></i> Start Camera';
-    btn.className = 'cam-toggle start';
+    updateButtonStates('stopped');
     setDot('pillCam', false);
-    camText.textContent = 'Camera Off';
+    camText.textContent = 'Cam Off';
+  }
+}
+
+function updateButtonStates(state) {
+  const btnDesktop = document.getElementById('btnToggleCamDesktop');
+  const btnFloat = document.getElementById('btnFloatToggle');
+
+  if (state === 'loading') {
+    if (btnDesktop) {
+      btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Starting...';
+      btnDesktop.disabled = true;
+    }
+    if (btnFloat) {
+      btnFloat.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    }
+  } else if (state === 'running') {
+    if (btnDesktop) {
+      btnDesktop.innerHTML = '<i class="fa-solid fa-stop"></i> Stop Camera';
+      btnDesktop.className = 'cam-toggle stop';
+      btnDesktop.disabled = false;
+    }
+    if (btnFloat) {
+      btnFloat.innerHTML = '<i class="fa-solid fa-stop"></i>';
+      btnFloat.className = 'floating-btn primary stop';
+    }
+  } else {
+    if (btnDesktop) {
+      btnDesktop.innerHTML = '<i class="fa-solid fa-play"></i> Start Camera';
+      btnDesktop.className = 'cam-toggle start';
+      btnDesktop.disabled = false;
+    }
+    if (btnFloat) {
+      btnFloat.innerHTML = '<i class="fa-solid fa-play"></i>';
+      btnFloat.className = 'floating-btn primary';
+    }
+  }
+}
+
+// ─── Flip Front / Back Camera (Crucial for Mobile) ───────────────────────────
+async function flipCamera() {
+  currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+  if (isWebcamRunning) {
+    // Stop current track and restart with new facing mode
+    if (videoStream) {
+      videoStream.getTracks().forEach(t => t.stop());
+      videoStream = null;
+    }
+    isWebcamRunning = false;
+    await toggleWebcam();
   }
 }
 
@@ -262,22 +315,25 @@ function renderObjects(predictions, ctx, w, h) {
   const counts = {};
 
   predictions.forEach(p => {
-    const [x, y, bw, bh] = p.bbox;
+    let [x, y, bw, bh] = p.bbox;
+
+    // Flip X coordinates if selfie camera is mirrored
+    if (currentFacingMode === 'user') {
+      x = w - x - bw;
+    }
+
     const label = `${p.class} ${Math.round(p.score * 100)}%`;
     counts[p.class] = (counts[p.class] || 0) + 1;
 
-    // Draw box
     ctx.strokeStyle = '#00e676';
     ctx.lineWidth = 3;
     ctx.strokeRect(x, y, bw, bh);
 
-    // Draw tag background
     ctx.font = 'bold 14px sans-serif';
     const textWidth = ctx.measureText(label).width;
     ctx.fillStyle = '#00e676';
     ctx.fillRect(x, Math.max(0, y - 24), textWidth + 10, 24);
 
-    // Draw label
     ctx.fillStyle = '#000000';
     ctx.fillText(label, x + 5, Math.max(16, y - 7));
   });
@@ -294,6 +350,8 @@ function renderObjects(predictions, ctx, w, h) {
 function renderEmotions(detections, ctx) {
   const countEl = document.getElementById('faceCountVal');
   const container = document.getElementById('facesContainer');
+  const canvas = document.getElementById('overlayCanvas');
+  const w = canvas.width;
 
   countEl.textContent = detections.length;
 
@@ -305,10 +363,13 @@ function renderEmotions(detections, ctx) {
   const facesTelemetry = [];
 
   detections.forEach((d, idx) => {
-    const box = d.detection.box;
-    const expressions = d.expressions;
+    let box = d.detection.box;
+    let x = box.x;
+    if (currentFacingMode === 'user') {
+      x = w - box.x - box.width;
+    }
 
-    // Find dominant emotion
+    const expressions = d.expressions;
     let maxEmotion = 'neutral';
     let maxScore = 0;
     for (const [em, val] of Object.entries(expressions)) {
@@ -321,19 +382,17 @@ function renderEmotions(detections, ctx) {
     const color = emotionColors[maxEmotion] || '#94a3b8';
     const emoji = emotionEmojis[maxEmotion] || '😐';
 
-    // Draw box
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
-    ctx.strokeRect(box.x, box.y, box.width, box.height);
+    ctx.strokeRect(x, box.y, box.width, box.height);
 
-    // Draw label tag
     const label = `${emoji} ${maxEmotion.toUpperCase()}`;
     ctx.font = 'bold 15px sans-serif';
     const tw = ctx.measureText(label).width;
     ctx.fillStyle = color;
-    ctx.fillRect(box.x, Math.max(0, box.y - 26), tw + 12, 26);
+    ctx.fillRect(x, Math.max(0, box.y - 26), tw + 12, 26);
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(label, box.x + 6, Math.max(18, box.y - 8));
+    ctx.fillText(label, x + 6, Math.max(18, box.y - 8));
 
     facesTelemetry.push({
       id: idx + 1,
@@ -344,7 +403,6 @@ function renderEmotions(detections, ctx) {
     });
   });
 
-  // Render Telemetry Bars in Right Panel
   container.innerHTML = facesTelemetry.map(f => {
     const bars = Object.entries(f.scores).map(([em, sc]) => {
       const pct = Math.round(sc * 100);
@@ -383,7 +441,6 @@ async function runClientOcr(videoEl) {
   box.textContent = 'Extracting text...';
 
   try {
-    // Capture snapshot from video to an offscreen canvas
     const offCanvas = document.createElement('canvas');
     offCanvas.width = videoEl.videoWidth || 640;
     offCanvas.height = videoEl.videoHeight || 480;
@@ -420,7 +477,6 @@ function copyOcrText() {
 
 // ─── 4. Client-Side Surveillance System ─────────────────────────────────────
 function renderSurveillance(video, ctx, w, h) {
-  // Simple frame differencing for real-time motion detection
   const offCanvas = document.createElement('canvas');
   offCanvas.width = 64;
   offCanvas.height = 48;
@@ -446,7 +502,6 @@ function renderSurveillance(video, ctx, w, h) {
   const sub = document.getElementById('survStatusSub');
 
   if (isIntruder) {
-    // Red Alert visual
     ctx.strokeStyle = '#ef4444';
     ctx.lineWidth = 8;
     ctx.strokeRect(0, 0, w, h);
@@ -455,7 +510,6 @@ function renderSurveillance(video, ctx, w, h) {
     title.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> MOTION / INTRUSION ALERT';
     sub.textContent = 'Significant motion detected in monitored zone!';
 
-    // Add to incident history (debounced)
     const now = Date.now();
     if (surveillanceIncidents.length === 0 || now - surveillanceIncidents[0].timeMs > 3000) {
       surveillanceIncidents.unshift({
@@ -507,7 +561,6 @@ async function handleImageFile(e) {
     canvas.width = img.width;
     canvas.height = img.height;
 
-    // Draw uploaded image onto canvas
     ctx.drawImage(img, 0, 0);
 
     if (currentMode === 'object_detection' && cocoModel) {
