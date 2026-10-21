@@ -26,8 +26,17 @@
 
   <!-- FontAwesome Icons & Ultra-Luxury Master CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-  <link rel="stylesheet" href="static/css/style.css?v=5.4"/>
+  <link rel="stylesheet" href="static/css/style.css?v=5.5"/>
   <style>
+    /* Full-Screen Edge-to-Edge Camera View (Zero Empty Margins) */
+    #webcamVideo,
+    #overlayCanvas {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      object-position: center !important;
+    }
+
     /* Ultra-Compact Micro Video Pill */
     .video-floating-bar {
       position: absolute !important;
@@ -359,6 +368,6 @@ Scanning scene for printed or digital text...
   </nav>
 
   <!-- Client-Side Video Analytics JS Logic -->
-  <script src="static/js/client_app.js?v=5.4"></script>
+  <script src="static/js/client_app.js?v=5.5"></script>
 </body>
 </html>
