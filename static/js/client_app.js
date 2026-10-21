@@ -1,6 +1,7 @@
 /**
- * VideoAnalytics Pro - Client-Side Controller
- * High-performance edge AI running 100% in the browser (Desktop & Mobile App UX)
+ * VideoAnalytics Pro - Ultra-Luxury Client-Side Controller
+ * High-performance edge AI running 100% in browser (Desktop & Mobile Native UX)
+ * Features Cyber-HUD Visuals, Real-Time Inference & 60fps Micro-Interactions
  */
 
 let currentMode = 'object_detection';
@@ -31,8 +32,8 @@ const emotionEmojis = {
 };
 
 const emotionColors = {
-  angry: '#ef4444', disgust: '#22c55e', fear: '#a855f7',
-  happy: '#10b981', neutral: '#94a3b8', sad: '#3b82f6', surprise: '#f59e0b'
+  angry: '#ef4444', disgust: '#10b981', fear: '#a855f7',
+  happy: '#00f2fe', neutral: '#94a3b8', sad: '#38bdf8', surprise: '#f59e0b'
 };
 
 // ─── Initialize ──────────────────────────────────────────────────────────────
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initClock() {
   const clockEl = document.getElementById('liveClock');
+  if (!clockEl) return;
   function update() {
     const d = new Date();
     clockEl.textContent = d.toLocaleTimeString('en-US', { hour12: false });
@@ -53,7 +55,7 @@ function initClock() {
 
 // ─── Preload AI Models ───────────────────────────────────────────────────────
 async function preloadModels() {
-  showLoader('Loading Object Detection AI...');
+  showLoader('Loading Object Detection AI (COCO-SSD)...');
   try {
     if (typeof cocoSsd !== 'undefined') {
       cocoModel = await cocoSsd.load();
@@ -63,7 +65,7 @@ async function preloadModels() {
     console.warn('COCO-SSD load issue:', e);
   }
 
-  showLoader('Loading Face & Emotion AI...');
+  showLoader('Loading Neural Face & Emotion AI...');
   try {
     if (typeof faceapi !== 'undefined') {
       const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
@@ -126,8 +128,10 @@ function setMode(newMode) {
 
   // Clear previous canvas drawing
   const canvas = document.getElementById('overlayCanvas');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 }
 
 // ─── Webcam Control ──────────────────────────────────────────────────────────
@@ -136,8 +140,6 @@ async function toggleWebcam() {
   const canvas = document.getElementById('overlayCanvas');
   const placeholder = document.getElementById('placeholder');
   const liveBadge = document.getElementById('liveBadge');
-  const btnDesktop = document.getElementById('btnToggleCamDesktop');
-  const btnFloat = document.getElementById('btnFloatToggle');
   const camText = document.getElementById('camStatusText');
 
   if (!isWebcamRunning) {
@@ -164,12 +166,12 @@ async function toggleWebcam() {
 
       video.classList.remove('hidden');
       placeholder.classList.add('hidden');
-      liveBadge.style.display = 'inline-flex';
+      if (liveBadge) liveBadge.style.display = 'inline-flex';
 
       isWebcamRunning = true;
       updateButtonStates('running');
       setDot('pillCam', true);
-      camText.textContent = (currentFacingMode === 'user') ? 'Front Cam' : 'Back Cam';
+      if (camText) camText.textContent = (currentFacingMode === 'user') ? 'Front Cam' : 'Back Cam';
 
       // Start Real-Time Render Loop
       renderLoop();
@@ -190,15 +192,17 @@ async function toggleWebcam() {
     video.srcObject = null;
     video.classList.add('hidden');
     placeholder.classList.remove('hidden');
-    liveBadge.style.display = 'none';
+    if (liveBadge) liveBadge.style.display = 'none';
 
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
     isWebcamRunning = false;
     updateButtonStates('stopped');
     setDot('pillCam', false);
-    camText.textContent = 'Cam Off';
+    if (camText) camText.textContent = 'Cam Off';
   }
 }
 
@@ -241,7 +245,6 @@ function updateButtonStates(state) {
 async function flipCamera() {
   currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
   if (isWebcamRunning) {
-    // Stop current track and restart with new facing mode
     if (videoStream) {
       videoStream.getTracks().forEach(t => t.stop());
       videoStream = null;
@@ -259,6 +262,7 @@ async function renderLoop() {
 
   const video = document.getElementById('webcamVideo');
   const canvas = document.getElementById('overlayCanvas');
+  if (!video || !canvas) return;
   const ctx = canvas.getContext('2d');
 
   if (video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -300,15 +304,64 @@ async function renderLoop() {
   animationFrameId = requestAnimationFrame(renderLoop);
 }
 
+// ─── Cyber-HUD Visual Box Renderer ──────────────────────────────────────────
+function drawCyberBox(ctx, x, y, w, h, color, label) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.8;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 8;
+
+  // Outer Bounding Box
+  ctx.strokeRect(x, y, w, h);
+
+  // Futuristic HUD Corner Brackets
+  const corner = Math.min(16, w * 0.25, h * 0.25);
+  ctx.lineWidth = 3.5;
+  ctx.beginPath();
+  // Top-left
+  ctx.moveTo(x, y + corner); ctx.lineTo(x, y); ctx.lineTo(x + corner, y);
+  // Top-right
+  ctx.moveTo(x + w - corner, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + corner);
+  // Bottom-left
+  ctx.moveTo(x, y + h - corner); ctx.lineTo(x, y + h); ctx.lineTo(x + corner, y + h);
+  // Bottom-right
+  ctx.moveTo(x + w - corner, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - corner);
+  ctx.stroke();
+
+  // Cyber Tag Pill Label
+  ctx.font = 'bold 12px "Space Grotesk", sans-serif';
+  const textWidth = ctx.measureText(label).width;
+  const tagH = 22;
+  const tagW = textWidth + 14;
+  const tagY = Math.max(0, y - tagH - 4);
+
+  // Translucent dark tag backdrop
+  ctx.fillStyle = 'rgba(5, 8, 17, 0.88)';
+  ctx.fillRect(x, tagY, tagW, tagH);
+
+  // Accent border on tag
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(x, tagY, tagW, tagH);
+
+  // Glowing label text
+  ctx.fillStyle = color;
+  ctx.shadowBlur = 6;
+  ctx.fillText(label, x + 7, tagY + 15);
+
+  ctx.restore();
+}
+
 // ─── 1. Object Detection Renderer ───────────────────────────────────────────
 function renderObjects(predictions, ctx, w, h) {
   const countEl = document.getElementById('objCountVal');
   const tagList = document.getElementById('objTagList');
 
-  countEl.textContent = predictions.length;
+  if (countEl) countEl.textContent = predictions.length;
 
   if (predictions.length === 0) {
-    tagList.innerHTML = '<div class="empty-state">No objects currently detected</div>';
+    if (tagList) tagList.innerHTML = '<div class="empty-state">No objects currently detected</div>';
     return;
   }
 
@@ -322,28 +375,20 @@ function renderObjects(predictions, ctx, w, h) {
       x = w - x - bw;
     }
 
-    const label = `${p.class} ${Math.round(p.score * 100)}%`;
+    const label = `${p.class.toUpperCase()} ${Math.round(p.score * 100)}%`;
     counts[p.class] = (counts[p.class] || 0) + 1;
 
-    ctx.strokeStyle = '#00e676';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(x, y, bw, bh);
-
-    ctx.font = 'bold 14px sans-serif';
-    const textWidth = ctx.measureText(label).width;
-    ctx.fillStyle = '#00e676';
-    ctx.fillRect(x, Math.max(0, y - 24), textWidth + 10, 24);
-
-    ctx.fillStyle = '#000000';
-    ctx.fillText(label, x + 5, Math.max(16, y - 7));
+    drawCyberBox(ctx, x, y, bw, bh, '#00f2fe', label);
   });
 
-  tagList.innerHTML = Object.entries(counts).map(([name, count]) => `
-    <div class="obj-pill">
-      <span class="pill-name">${name}</span>
-      <span class="pill-count">×${count}</span>
-    </div>
-  `).join('');
+  if (tagList) {
+    tagList.innerHTML = Object.entries(counts).map(([name, count]) => `
+      <div class="obj-pill">
+        <span class="pill-name">${name}</span>
+        <span class="pill-count">×${count}</span>
+      </div>
+    `).join('');
+  }
 }
 
 // ─── 2. Facial Emotion Renderer ─────────────────────────────────────────────
@@ -353,10 +398,10 @@ function renderEmotions(detections, ctx) {
   const canvas = document.getElementById('overlayCanvas');
   const w = canvas.width;
 
-  countEl.textContent = detections.length;
+  if (countEl) countEl.textContent = detections.length;
 
   if (detections.length === 0) {
-    container.innerHTML = '<div class="empty-state">Looking for human faces...</div>';
+    if (container) container.innerHTML = '<div class="empty-state">Looking for human faces...</div>';
     return;
   }
 
@@ -379,20 +424,11 @@ function renderEmotions(detections, ctx) {
       }
     }
 
-    const color = emotionColors[maxEmotion] || '#94a3b8';
+    const color = emotionColors[maxEmotion] || '#00f2fe';
     const emoji = emotionEmojis[maxEmotion] || '😐';
+    const label = `${emoji} ${maxEmotion.toUpperCase()} ${Math.round(maxScore * 100)}%`;
 
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(x, box.y, box.width, box.height);
-
-    const label = `${emoji} ${maxEmotion.toUpperCase()}`;
-    ctx.font = 'bold 15px sans-serif';
-    const tw = ctx.measureText(label).width;
-    ctx.fillStyle = color;
-    ctx.fillRect(x, Math.max(0, box.y - 26), tw + 12, 26);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(label, x + 6, Math.max(18, box.y - 8));
+    drawCyberBox(ctx, x, box.y, box.width, box.height, color, label);
 
     facesTelemetry.push({
       id: idx + 1,
@@ -403,33 +439,35 @@ function renderEmotions(detections, ctx) {
     });
   });
 
-  container.innerHTML = facesTelemetry.map(f => {
-    const bars = Object.entries(f.scores).map(([em, sc]) => {
-      const pct = Math.round(sc * 100);
-      const barColor = emotionColors[em] || '#94a3b8';
-      return `
-        <div class="emotion-bar-row">
-          <span class="bar-label">${em}</span>
-          <div class="bar-track">
-            <div class="bar-fill" style="width: ${pct}%; background-color: ${barColor};"></div>
+  if (container) {
+    container.innerHTML = facesTelemetry.map(f => {
+      const bars = Object.entries(f.scores).map(([em, sc]) => {
+        const pct = Math.round(sc * 100);
+        const barColor = emotionColors[em] || '#94a3b8';
+        return `
+          <div class="emotion-bar-row">
+            <span class="bar-label">${em}</span>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: ${pct}%; background-color: ${barColor};"></div>
+            </div>
+            <span class="bar-val">${pct}%</span>
           </div>
-          <span class="bar-val">${pct}%</span>
+        `;
+      }).join('');
+
+      return `
+        <div class="face-card">
+          <div class="face-card-header">
+            <span class="face-id">Face #${f.id}</span>
+            <span class="face-emotion-badge" style="background: ${f.color}22; color: ${f.color}; border: 1px solid ${f.color};">
+              ${f.emoji} ${f.emotion.toUpperCase()}
+            </span>
+          </div>
+          <div class="bars-container">${bars}</div>
         </div>
       `;
     }).join('');
-
-    return `
-      <div class="face-card">
-        <div class="face-card-header">
-          <span class="face-id">Face #${f.id}</span>
-          <span class="face-emotion-badge" style="background: ${f.color}22; color: ${f.color}; border: 1px solid ${f.color};">
-            ${f.emoji} ${f.emotion.toUpperCase()}
-          </span>
-        </div>
-        <div class="bars-container">${bars}</div>
-      </div>
-    `;
-  }).join('');
+  }
 }
 
 // ─── 3. Client-Side OCR ─────────────────────────────────────────────────────
@@ -438,7 +476,7 @@ async function runClientOcr(videoEl) {
   isOcrProcessing = true;
 
   const box = document.getElementById('ocrOutputBox');
-  box.textContent = 'Extracting text...';
+  if (box) box.textContent = 'Extracting neural text...';
 
   try {
     const offCanvas = document.createElement('canvas');
@@ -449,9 +487,9 @@ async function runClientOcr(videoEl) {
 
     const { data: { text } } = await Tesseract.recognize(offCanvas, 'eng');
     const clean = text.trim();
-    box.textContent = clean || 'No text detected in scene. Point camera at printed text.';
+    if (box) box.textContent = clean || 'No text detected in scene. Point camera at printed text.';
   } catch (e) {
-    box.textContent = 'OCR Scan complete. Point at clear text.';
+    if (box) box.textContent = 'OCR Scan complete. Point at clear text.';
   } finally {
     isOcrProcessing = false;
   }
@@ -468,8 +506,9 @@ function runManualOcr() {
 
 function copyOcrText() {
   const box = document.getElementById('ocrOutputBox');
+  if (!box) return;
   const txt = box.textContent;
-  if (!txt || txt.includes('Scanning')) return;
+  if (!txt || txt.includes('Scanning') || txt.includes('Extracting')) return;
   navigator.clipboard.writeText(txt).then(() => {
     alert('Copied to clipboard!');
   });
@@ -503,12 +542,12 @@ function renderSurveillance(video, ctx, w, h) {
 
   if (isIntruder) {
     ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 6;
     ctx.strokeRect(0, 0, w, h);
 
-    banner.className = 'alert-banner danger pulse-danger';
-    title.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> MOTION / INTRUSION ALERT';
-    sub.textContent = 'Significant motion detected in monitored zone!';
+    if (banner) banner.className = 'alert-banner danger pulse-danger';
+    if (title) title.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> MOTION / INTRUSION ALERT';
+    if (sub) sub.textContent = 'Significant motion detected in monitored zone!';
 
     const now = Date.now();
     if (surveillanceIncidents.length === 0 || now - surveillanceIncidents[0].timeMs > 3000) {
@@ -520,14 +559,15 @@ function renderSurveillance(video, ctx, w, h) {
       renderIncidents();
     }
   } else {
-    banner.className = 'alert-banner';
-    title.innerHTML = '<i class="fa-solid fa-shield-check"></i> Monitoring Active - All Clear';
-    sub.textContent = 'Zero intrusions detected. Area secured.';
+    if (banner) banner.className = 'alert-banner';
+    if (title) title.innerHTML = '<i class="fa-solid fa-shield-check"></i> Monitoring Active - All Clear';
+    if (sub) sub.textContent = 'Zero intrusions detected. Area secured.';
   }
 }
 
 function renderIncidents() {
   const listEl = document.getElementById('alertsList');
+  if (!listEl) return;
   if (surveillanceIncidents.length === 0) {
     listEl.innerHTML = '<div class="empty-state">No security incidents recorded</div>';
     return;
@@ -557,6 +597,7 @@ async function handleImageFile(e) {
   img.src = URL.createObjectURL(file);
   img.onload = async () => {
     const canvas = document.getElementById('overlayCanvas');
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     canvas.width = img.width;
     canvas.height = img.height;
@@ -573,7 +614,8 @@ async function handleImageFile(e) {
       renderEmotions(dets, ctx);
     } else if (currentMode === 'ocr') {
       const { data: { text } } = await Tesseract.recognize(img, 'eng');
-      document.getElementById('ocrOutputBox').textContent = text.trim() || 'No text recognized.';
+      const box = document.getElementById('ocrOutputBox');
+      if (box) box.textContent = text.trim() || 'No text recognized.';
     }
   };
 }
@@ -581,8 +623,12 @@ async function handleImageFile(e) {
 // ─── Fullscreen & Keyboard Hotkeys ───────────────────────────────────────────
 function toggleFullscreen() {
   const vp = document.getElementById('videoViewport');
-  if (!document.fullscreenElement) vp.requestFullscreen();
-  else document.exitFullscreen();
+  if (!document.fullscreenElement) {
+    if (vp.requestFullscreen) vp.requestFullscreen();
+    else if (vp.webkitRequestFullscreen) vp.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+  }
 }
 
 document.addEventListener('keydown', e => {
