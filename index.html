@@ -28,15 +28,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
   <link rel="stylesheet" href="static/css/style.css?v=5.5"/>
   <style>
-    /* Full-Screen Edge-to-Edge Camera View (Zero Empty Margins) */
-    #webcamVideo,
-    #overlayCanvas {
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: cover !important;
-      object-position: center !important;
-    }
-
     /* Ultra-Compact Micro Video Pill */
     .video-floating-bar {
       position: absolute !important;
@@ -120,6 +111,9 @@
     </div>
 
     <div class="topbar-right">
+      <button class="theme-toggle-btn" id="btnThemeToggle" onclick="toggleTheme()" title="Switch Light / Dark Theme (Hotkey: T)">
+        <i class="fa-solid fa-sun" id="themeIcon"></i>
+      </button>
       <div class="clock" id="liveClock">--:--:--</div>
     </div>
   </header>
@@ -176,6 +170,14 @@
           <i class="fa-solid fa-play"></i> Start Camera
         </button>
 
+        <button class="btn-action full-width" onclick="toggleTheme()" title="Switch Light / Dark Theme (Hotkey: T)">
+          <i class="fa-solid fa-circle-half-stroke"></i> Switch Theme (Light/Dark)
+        </button>
+
+        <button class="btn-action full-width" onclick="toggleMirror()" title="Invert / Mirror Camera (Hotkey: M)">
+          <i class="fa-solid fa-right-left"></i> Invert / Mirror Camera (M)
+        </button>
+
         <button class="btn-action full-width" onclick="flipCamera()">
           <i class="fa-solid fa-camera-rotate"></i> Flip Camera (Front/Back)
         </button>
@@ -198,7 +200,10 @@
             <span class="mode-badge" id="activeModeBadge">Object Detection</span>
           </div>
           <div class="header-right">
-            <button class="fullscreen-btn" onclick="flipCamera()" title="Flip Camera">
+            <button class="fullscreen-btn" id="btnMirrorCam" onclick="toggleMirror()" title="Invert / Mirror Camera (Hotkey: M)">
+              <i class="fa-solid fa-right-left"></i>
+            </button>
+            <button class="fullscreen-btn" onclick="flipCamera()" title="Flip Front / Back Camera">
               <i class="fa-solid fa-camera-rotate"></i>
             </button>
             <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">
@@ -219,8 +224,12 @@
             <video id="webcamVideo" autoplay playsinline muted class="hidden"></video>
             <canvas id="overlayCanvas"></canvas>
 
-            <!-- Floating Video Action Pill (Only shows during active stream/image) -->
-            <div class="video-floating-bar hidden" id="floatingBar">
+            <!-- Floating Video Action Pill -->
+            <div class="video-floating-bar" id="floatingBar">
+              <button class="floating-btn" id="btnFloatMirror" onclick="toggleMirror()" title="Invert / Mirror Camera">
+                <i class="fa-solid fa-right-left"></i>
+              </button>
+
               <button class="floating-btn" onclick="flipCamera()" title="Flip Front / Back Camera">
                 <i class="fa-solid fa-camera-rotate"></i>
               </button>
@@ -240,15 +249,9 @@
               <div class="placeholder-icon"><i class="fa-solid fa-video-slash"></i></div>
               <h3>Neural Video Stream Inactive</h3>
               <p>Tap <strong>Start Camera</strong> to launch edge AI analytics with real-time HUD rendering.</p>
-              <div class="placeholder-actions">
-                <button class="btn-primary" onclick="toggleWebcam()">
-                  <i class="fa-solid fa-play"></i> Start Camera
-                </button>
-                <label class="btn-action-pill" for="fileInputPlaceholder">
-                  <i class="fa-solid fa-cloud-arrow-up"></i> Upload
-                </label>
-                <input type="file" id="fileInputPlaceholder" accept="image/*" onchange="handleImageFile(event)" style="display: none;"/>
-              </div>
+              <button class="btn-primary" onclick="toggleWebcam()">
+                <i class="fa-solid fa-play"></i> Start Camera
+              </button>
             </div>
           </div>
         </div>
@@ -258,7 +261,7 @@
           <div class="footer-item"><span class="label">Inference Engine:</span><span class="val text-accent">TensorFlow.js + FaceAPI</span></div>
           <div class="footer-item"><span class="label">System State:</span><span class="val text-success">Optimized 60 FPS</span></div>
           <div class="footer-item shortcuts-hint">
-            <span>Keys: <strong>1-4</strong> Switch | <strong>Space</strong> Camera</span>
+            <span>Keys: <strong>1-4</strong> Switch | <strong>Space</strong> Cam | <strong>M</strong> Invert | <strong>T</strong> Theme</span>
           </div>
         </div>
       </div>

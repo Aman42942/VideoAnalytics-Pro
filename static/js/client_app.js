@@ -9,6 +9,7 @@ let isWebcamRunning = false;
 let videoStream = null;
 let animationFrameId = null;
 let currentFacingMode = 'user'; // 'user' (selfie) or 'environment' (back camera)
+let isCameraMirrored = false; // Inverted / Unmirrored (toggleable via 'M' key or Invert button)
 
 // Models
 let cocoModel = null;
@@ -31,6 +32,35 @@ const emotionEmojis = {
   happy: '😊', neutral: '😐', sad: '😢', surprise: '😲'
 };
 
+// ─── Theme Management (Light / Dark Mode) ──────────────────────────────────
+let currentTheme = localStorage.getItem('app_theme') || 'dark';
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem('app_theme', theme);
+
+  const icon = document.getElementById('themeIcon');
+  if (icon) {
+    if (theme === 'light') {
+      icon.className = 'fa-solid fa-moon';
+      icon.style.color = '#0284c7';
+    } else {
+      icon.className = 'fa-solid fa-sun';
+      icon.style.color = '#f59e0b';
+    }
+  }
+
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute('content', theme === 'light' ? '#f8fafc' : '#000000');
+  }
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+}
+
 const emotionColors = {
   angry: '#ef4444', disgust: '#10b981', fear: '#a855f7',
   happy: '#00f2fe', neutral: '#94a3b8', sad: '#38bdf8', surprise: '#f59e0b'
@@ -38,6 +68,7 @@ const emotionColors = {
 
 // ─── Initialize ──────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(currentTheme);
   initClock();
   preloadModels();
 });
@@ -159,7 +190,7 @@ async function toggleWebcam() {
       await video.play();
 
       // Mirror selfie camera for natural view, keep back camera unmirrored
-      video.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+      video.style.transform = isCameraMirrored ? 'scaleX(-1)' : 'scaleX(1)';
 
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
@@ -242,6 +273,23 @@ function updateButtonStates(state) {
       btnFloat.innerHTML = '<i class="fa-solid fa-play"></i>';
       btnFloat.className = 'floating-btn primary';
     }
+  }
+}
+
+// ─── Invert / Mirror Camera (Horizontal Axis Toggle) ────────────────────────
+function toggleMirror() {
+  isCameraMirrored = !isCameraMirrored;
+  const video = document.getElementById('webcamVideo');
+  if (video) {
+    video.style.transform = isCameraMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+  }
+  const btn = document.getElementById('btnMirrorCam');
+  if (btn) {
+    btn.classList.toggle('active', isCameraMirrored);
+  }
+  const btnFloat = document.getElementById('btnFloatMirror');
+  if (btnFloat) {
+    btnFloat.classList.toggle('active', isCameraMirrored);
   }
 }
 
@@ -375,7 +423,7 @@ function renderObjects(predictions, ctx, w, h) {
     let [x, y, bw, bh] = p.bbox;
 
     // Flip X coordinates if selfie camera is mirrored
-    if (currentFacingMode === 'user') {
+    if (isCameraMirrored) {
       x = w - x - bw;
     }
 
@@ -414,7 +462,7 @@ function renderEmotions(detections, ctx) {
   detections.forEach((d, idx) => {
     let box = d.detection.box;
     let x = box.x;
-    if (currentFacingMode === 'user') {
+    if (isCameraMirrored) {
       x = w - box.x - box.width;
     }
 
@@ -645,6 +693,12 @@ document.addEventListener('keydown', e => {
   if (e.key === '2') setMode('emotion');
   if (e.key === '3') setMode('ocr');
   if (e.key === '4') setMode('surveillance');
+  if (e.key === 't' || e.key === 'T') {
+    toggleTheme();
+  }
+  if (e.key === 'm' || e.key === 'M') {
+    toggleMirror();
+  }
   if (e.key === ' ' || e.code === 'Space') {
     e.preventDefault();
     toggleWebcam();
